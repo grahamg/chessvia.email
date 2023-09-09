@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>chessvia.email</title>
+    <style>
+        /* Basic reset */
+        body, h1, p, button {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+        }
+
+        /* Container for centering content */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Styling for the header */
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Styling for the paragraphs */
+        p {
+            font-size: 18px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            text-align: justify;
+        }
+
+        /* Styling for the button */
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        @media (min-width: 768px) {
+            /* Larger font sizes for desktop screens */
+            h1 {
+                font-size: 32px;
+            }
+
+            p {
+                font-size: 20px;
+            }
+
+            button {
+                width: auto;
+                display: inline-block;
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to chessvia.email! 🎉</h1>
+        <p>Ever wanted to play chess with a friend, but at your own pace? Here, you can play a relaxed game of chess with someone, even if you're miles apart. Each move is sent through a friendly email link.</p>
+        <p>Don't worry about keeping track of the game. We'll remember all the moves for you and even let you look back at them. So, you can just enjoy the game and plan your next winning move.</p>
+        <p>Here's how it works:</p>
+        <ol>
+            <li>You start a new game by clicking the button below.</li>
+            <li>You enter your email address and your friend's email address.</li>
+            <li>You click the "Start Game" button.</li>
+            <li>You receive an email with a link to the game.</li>
+            <li>You click the link and start playing.</li>
+            <li>You make a move and click the "Send Move" button.</li>
+            <li>Your friend receives an email with a link to the game.</li>
+            <li>Your friend clicks the link and starts playing.</li>
+            <li>Your friend makes a move and clicks the "Send Move" button.</li>
+            <li>You receive an email with a link to the game.</li>
+            <li>And so on...</li>
+        </ol>
+        <p>It's that simple!</p>
+        <p>Ready to play?</p>
+        <button onclick="location.href='/new-game'">Start New Game</button>
+    </div>
+</body>
+</html>

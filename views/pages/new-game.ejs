@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>chessvia.email: New Game Wizard</title>
+    <style>
+         /* Basic styling */
+         body {
+            font-family: 'Arial', sans-serif;
+            padding: 20px;
+        }
+
+        .player-form {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .player-icon {
+            font-size: 50px;
+            margin-right: 10px;
+        }
+
+        .player-fields {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .player-fields input {
+            margin-bottom: 10px;
+            padding: 5px;
+            font-size: 16px;
+        }
+
+        button, input[type="submit"] {
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover, input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h2>New Game Wizard</h2>
+
+    <form action="/game" method="get">
+        <!-- White Player Form -->
+        <div class="player-form">
+            <div class="player-icon">&#9814;</div> <!-- White Rook Unicode Character -->
+            <div class="player-fields">
+                <input type="text" name="whitePlayerName" placeholder="Your Name" required>
+                <input type="email" name="whitePlayerEmail" placeholder="Your Email" required>
+                <input type="password" name="whitePlayerPassword" placeholder="Password" required>
+                <input type="password" name="whitePlayerConfirmPassword" placeholder="Confirm Password" required>
+            </div>
+        </div>
+
+        <!-- Black Player Form -->
+        <div class="player-form">
+            <div class="player-icon">&#9820;</div> <!-- Black Rook Unicode Character -->
+            <div class="player-fields">
+                <input type="text" name="blackPlayerName" placeholder="Opponent's Name" required>
+                <input type="email" name="blackPlayerEmail" placeholder="Opponent's Email" required>
+            </div>
+        </div>
+
+        <p>Your opponent will be emailed, notifying them that you'd like to start a new chess game.</p>
+        <p>They'll be asked to set their own password to protect their moves.</p>
+
+        <input type="submit" value="White game piece moves first">
+    </form>
+</body>
+</html>
