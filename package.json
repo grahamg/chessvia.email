@@ -1,7 +1,7 @@
 {
   "name": "email-chess",
   "version": "1.0.0",
-  "description": "",
+  "description": "A simple email chess game where you can play chess with your friends via email.",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -13,7 +13,9 @@
     "@chrisoakman/chessboardjs": "^1.0.0",
     "body-parser": "^1.20.2",
     "chess.js": "^1.0.0-beta.6",
+    "ejs": "^3.1.9",
     "express": "^4.18.2",
+    "nodemailer": "^6.9.5",
     "sqlite3": "^5.1.6"
   }
 }
