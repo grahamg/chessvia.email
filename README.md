@@ -1,4 +1,4 @@
-# Chess Web Application
+# chessvia.email
 
 A web application that allows two players to play chess. Built with Node.js, Express, chessboard.js, and chess.js. Each move is saved to an SQLite database.
 
