@@ -1,7 +1,7 @@
 {
-  "name": "email-chess",
+  "name": "chessvia.email",
   "version": "1.0.0",
-  "description": "A simple email chess game where you can play chess with your friends via email.",
+  "description": "A casual slow-moving chess game where you communicate moves with your friends via email, which the app manages..",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
