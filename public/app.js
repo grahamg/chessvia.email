@@ -1,28 +1,27 @@
-const board = Chessboard('board', 'start');
+const boardElement = 'board';
+const boardConfig = {
+  draggable: true,
+  position: 'start',
+  onDrop: handleMove
+};
+
 const game = new Chess();
+const board = Chessboard(boardElement, boardConfig);
 
-board.position(game.fen());
-
-board.on('move', (source, target) => {
+function handleMove(source, target) {
+    // Check if the move is valid
     const move = game.move({
         from: source,
         to: target,
-        promotion: 'q'
+        promotion: 'q' // Always promote to a queen for simplicity
     });
 
-    if (move) {
-        fetch('/saveMove', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                gameId: '23423', // This should be dynamic based on the game
-                move: `${source}-${target}`
-            })
-        });
-    } else {
-        board.position(game.fen());
+    // If the move is invalid, reset the board
+    if (!move) {
+        return 'snapback';
     }
-});
 
+    // TODO: You can add additional logic here, such as checking for game over
+}
+
+board.position(game.fen());
