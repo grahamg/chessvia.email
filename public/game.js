@@ -1,15 +1,16 @@
 const boardElement = 'board';
 const boardConfig = {
+  visible: false,
   draggable: true,
   position: 'start',
-  onDrop: handleMove,
+  onDrop: () => handleMove,
   pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
 };
 
 const game = new Chess();
 const board = Chessboard(boardElement, boardConfig);
 
-let getGameTurn = () => {
+const getGameTurn = () => {
     if (game.turn() === 'w') {
         return `It's white's turn to move.`
     } else if (game.turn() === 'b') {
@@ -17,9 +18,7 @@ let getGameTurn = () => {
     }
 };
 
-document.getElementById('status').innerHTML = getGameTurn();
-
-function checkPlayerPassword(gameId, player, password) {
+const checkPayerPassword = (gameId, player, password) => {
     const xhr = new XMLHttpRequest();
     xhr.addEventListener('loadend', (e) => {
         console.log(`${log.textContent}${e.type}: ${e.loaded} bytes transferred\n`);
@@ -28,9 +27,9 @@ function checkPlayerPassword(gameId, player, password) {
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.send(JSON.stringify({ gameId, player, password }));
     return xhr;
-}
+};
 
-function handleMove(source, target, piece, newPos, oldPos, orientation) {
+const handleMove = (source, target, piece, newPos, oldPos, orientation) => {
     // Check if the move is valid
     const gameId = window.location.href.split('/').at(-1);
     const move = game.move({
@@ -96,17 +95,19 @@ function handleMove(source, target, piece, newPos, oldPos, orientation) {
                 console.error('Error:', error);
             });
         });
-
-        /*
-        // Send the move to the server
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', `/game/${gameId}`, true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.send(JSON.stringify({ gameId, move }));
-
-        // Update the status
-        document.getElementById('status').innerHTML = getGameTurn();
-        */
     }
+};
 
-}
+// Game board startup tasks
+(function(gameBoardMoves) {
+    // Get the game status, namely whose turn it is.
+    document.getElementById('status').innerHTML = getGameTurn();
+
+    // Initialize the game board with existing moves.
+    gameBoardMoves.forEach((i) => {
+        board.move(i);
+    });
+
+    // Make the populated board visible.
+    board.visible = true;
+})(gameBoardMoves);

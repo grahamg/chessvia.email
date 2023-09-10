@@ -91,6 +91,15 @@
     <script src="/js/chess.min.js"></script>
     <script src="/js/jquery-3.5.1.min.js"></script>
     <script src="/js/chessboard-1.0.0.min.js"></script>
+    <script>
+        <% if (movesList.length > 0) { %>
+            let gameBoardMoves = [
+                <% for (var i = 0; i < movesList.length; i++) { %>
+                    '<%= movesList[i].move %>',
+                <% } %>
+            ];
+        <% } %>
+    </script>
     <script src="/game.js"></script>
 </body>
 </html>
