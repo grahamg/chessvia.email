@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>chessvia.email</title>
+    <link rel="stylesheet" href="/css/chessboard-1.0.0.min.css">
+    <style>
+         /* Basic styling */
+         body {
+            font-family: 'Arial', sans-serif;
+            padding: 20px;
+        }
+
+        .player-form {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .player-icon {
+            font-size: 50px;
+            margin-right: 10px;
+        }
+
+        .player-fields {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .player-fields input {
+            margin-bottom: 10px;
+            padding: 5px;
+            font-size: 16px;
+        }
+
+        button, input[type="submit"] {
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover, input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h2>Join Game</h2>
+
+    <p><%= game.whitePlayerName %> has invited you to play a casual game of chess on <a href="http://www.chessvia.email" target="blank">chessvia.email</a> where the invidual moves are communicated through email.</p>
+    <p>Here's how it works:</p>
+    <ol>
+        <li>Choose a password that you'll enter whenever you move a game piece on the board.</li>
+        <li>Click the "Join Game" button.</li>
+        <li>Make a move and click the "Send Move" button.</li>
+        <li>Your opponent receives an email notifying them that you've joined the game.</li>
+        <li>Your opponent clicks the link and takes their second move.</li>
+        <li>You'll receive a new email with another notification notifying you that it's your move.</li>
+        <li>And so on...</li>
+    </ol>
+    <p>It's that simple!</p>
+    <p>Ready to play?</p>
+
+    <form id="joinGameForm">
+        <!-- Black Player Form -->
+        <div class="player-form">
+            <div class="player-icon">&#9820;</div> <!-- Black Rook Unicode Character -->
+            <div class="player-fields">
+                <input id="pass" type="password" name="blackPlayerPassword" placeholder="Choose a password" required>
+                <input id="confirmPass" type="password" name="blackPlayerConfirmPassword" placeholder="Enter it again" required>
+            </div>
+        </div>
+
+        <p>You'll be playing as black.</p>
+        <p>Your opponent, <%= game.whitePlayerName %>, is playing as white and has already taken the intial move of the game.</p>
+
+        <input type="submit" value="Join Game">
+    </form>
+    <script>const blackPlayerHasUnsetPassword = <%= game.blackPlayerPassword === 'True' %>;</script>
+    <script src="/join-game.js"></script>
+</body>
+</html>

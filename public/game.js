@@ -1,34 +1,3 @@
-const boardElement = 'board';
-const boardConfig = {
-  visible: false,
-  draggable: true,
-  position: 'start',
-  onDrop: () => handleMove,
-  pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
-};
-
-const game = new Chess();
-const board = Chessboard(boardElement, boardConfig);
-
-const getGameTurn = () => {
-    if (game.turn() === 'w') {
-        return `It's white's turn to move.`
-    } else if (game.turn() === 'b') {
-        return `It's black's turn to move.`
-    }
-};
-
-const checkPayerPassword = (gameId, player, password) => {
-    const xhr = new XMLHttpRequest();
-    xhr.addEventListener('loadend', (e) => {
-        console.log(`${log.textContent}${e.type}: ${e.loaded} bytes transferred\n`);
-    });
-    xhr.open('POST', `/game/${gameId}/check-password`, true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.send(JSON.stringify({ gameId, player, password }));
-    return xhr;
-};
-
 const handleMove = (source, target, piece, newPos, oldPos, orientation) => {
     // Check if the move is valid
     const gameId = window.location.href.split('/').at(-1);
@@ -45,10 +14,10 @@ const handleMove = (source, target, piece, newPos, oldPos, orientation) => {
     } else {
         document.getElementById('status').innerHTML = `
         <form id="passwordForm">
-        <label for="submitMove">Enter your password to submit your move of ${move.from}-${move.to}</label>
-        <input type="password" name="submitMove" id="pass">
-        <button type="submit">Submit</button>
-        <button type="button" id="cancelButton">Cancel</button>
+            <label for="submitMove">Enter your password to submit your move of ${move.from}-${move.to}</label>
+            <input type="password" name="submitMove" id="pass">
+            <button type="submit">Submit</button>
+            <button type="button" id="cancelButton">Cancel</button>
         </form>`;
 
         document.getElementById('cancelButton').addEventListener('click', function(event) {
@@ -92,11 +61,42 @@ const handleMove = (source, target, piece, newPos, oldPos, orientation) => {
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.log(`Error submitting move: ${error}`);
             });
         });
     }
 };
+
+const getGameTurn = () => {
+    if (game.turn() === 'w') {
+        return `It's white's turn to move.`
+    } else if (game.turn() === 'b') {
+        return `It's black's turn to move.`
+    }
+};
+
+const checkPlayerPassword = (gameId, player, password) => {
+    const xhr = new XMLHttpRequest();
+    xhr.addEventListener('loadend', (e) => {
+        console.log(`${log.textContent}${e.type}: ${e.loaded} bytes transferred\n`);
+    });
+    xhr.open('POST', `/game/${gameId}/check-password`, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send(JSON.stringify({ gameId, player, password }));
+    return xhr;
+};
+
+const boardElement = 'board';
+const boardConfig = {
+  visible: false,
+  draggable: true,
+  position: 'start',
+  onDrop: handleMove,
+  pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+};
+
+const game = new Chess();
+const board = Chessboard(boardElement, boardConfig);
 
 // Game board startup tasks
 (function(gameBoardMoves) {

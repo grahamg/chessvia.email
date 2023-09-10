@@ -89,6 +89,46 @@ app.get('/game/:gameId', (req, res) => {
     });
 });
 
+app.get('/game/:gameId/join', (req, res) => {
+    const gameId = req.params.gameId;
+
+    // Fetch moves for the game
+    db.all("SELECT * FROM games WHERE gameId = ?", [gameId], (err, game) => {
+        if (err) {
+            console.log(err);
+            return res.send("Error loading moves.");
+        }
+
+        res.render('pages/join-game', {
+            gameId: gameId,
+            game: game[0]
+        });
+    });
+});
+
+app.post('/game/:gameId/join', (req, res) => {
+    const gameId = req.body.gameId;
+    const password = req.body.password;
+    const confirmPassword = req.body.confirmPassword;
+
+    if (password !== confirmPassword) {
+        console.log("Passwords do not match for the black player.");
+        return res.send("Passwords do not match for the black player.");
+    }
+
+    try {
+        const stmt = db.prepare("UPDATE games SET blackPlayerPassword = ? WHERE gameId = ?");
+        stmt.run(password, gameId);
+        stmt.finalize();
+    } catch (err) {
+        console.log(err);
+        return res.send({ status: 'error'});
+    }
+
+    console.log("POST: " + JSON.stringify(req.body));
+    res.send({ status: 'success' });
+});
+
 app.post('/game/:gameId', (req, res) => {
     const gameId = req.body.gameId;
     const move = req.body.move;
@@ -101,7 +141,7 @@ app.post('/game/:gameId', (req, res) => {
         stmt.finalize();
     } catch (err) {
         console.log(err);
-        res.send({ status: 'error' });
+        return res.send("Error saving move.");
     }
 
     console.log("POST: " + JSON.stringify({ gameId, player, moveFromTo }));
