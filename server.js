@@ -108,6 +108,29 @@ app.post('/game/:gameId', (req, res) => {
     res.send({ status: 'saved' });
 });
 
+app.post('/game/:gameId/check-password', (req, res) => {
+    const gameId = req.body.gameId;
+    const player = req.body.boardOrientation;
+    const password = req.body.enteredPassword;
+
+    console.log(JSON.stringify({ gameId, player, password }));
+
+    db.all("SELECT * FROM games WHERE gameId = ?", [gameId], (err, game) => {
+        if (err) {
+            console.log(err);
+            return res.send("Error loading game.");
+        }
+
+        if (player === 'white' && password === game[0].whitePlayerPassword) {
+            return res.send({ status: 'success' });
+        } else if (player === 'black' && password === game[0].blackPlayerPassword) {
+            return res.send({ status: 'success' });
+        } else {
+            return res.send({ status: 'error' });
+        }
+    });
+});
+
 app.listen(PORT, () => {
     console.log(`Server is listening on port ${PORT}!`);
 });

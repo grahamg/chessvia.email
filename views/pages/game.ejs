@@ -15,6 +15,21 @@
             margin-top: 10px;
         }
 
+        #moves {
+            width: 415px;
+            height: 500px;
+            overflow-y: auto;
+            display: block;
+        }
+
+        #player-vs-player ul {
+            width: 400px;
+            margin-top: 10px;
+            list-style:none;
+            padding:0;
+            margin:0;
+        }
+
         hr.left-align {
             width: 400px;
             margin-left: 0;
@@ -42,7 +57,11 @@
     <div id="board"></div>
     <hr class="left-align">
     <div id="player-vs-player">
-        White: <%= game.whitePlayerName %> (<%= game.whitePlayerEmail %>) vs. Black: <%= game.blackPlayerName %> (<%= game.blackPlayerEmail %>)
+        <ul>
+            <li>Black: <%= game.blackPlayerName %> <i>(<%= game.blackPlayerEmail %>)</i></li>
+            <li>vs.</li>
+            <li>White: <%= game.whitePlayerName %> <i>(<%= game.whitePlayerEmail %>)</i></li>
+        </ul>
     </div>
     <hr class="left-align">
     <div id="status"></div>
@@ -52,7 +71,7 @@
             <table>
                 <tr>
                   <th>Player</th>
-                  <th>Move <i>[from-to]</i></th>
+                  <th>Move</th>
                   <th>Timestamp</th>
                 </tr>
                 <% for (var i = 0; i < movesList.length; i++) { %>
@@ -63,7 +82,7 @@
                             <td><%= game.blackPlayerName %></td>
                         <% } %>
                         <td><%= movesList[i].move %></td>
-                        <td><%= movesList[i].timestamp %></td>
+                        <td><%= movesList[i].timestamp %> Central</td>
                     </tr>
                 <% } %>
               </table>
