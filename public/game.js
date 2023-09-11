@@ -106,7 +106,7 @@ const boardConfig = {
   position: 'start',
   onDrop: handleOnDrop,
   onMoveEnd: handleOnMoveEnd,
-  pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+  pieceTheme: '../img/chesspieces/wikipedia/{piece}.png'
 };
 
 const chess = new Chess();
