@@ -4,6 +4,8 @@ A web application that allows two players to play chess. Built with Node.js, Exp
 
 A production installation of this software is available from [https://www.chessvia.email/](https://www.chessvia.email/).
 
+![screenshot of chess board ui](https://github.com/grahamg/chessvia.email/blob/main/public/img/IMG_0324.PNG "screenshot of chess board ui")
+
 ## Features
 
 - Interactive chessboard using `chessboard.js`.
