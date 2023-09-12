@@ -1,8 +1,10 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const sqlite3 = require('sqlite3').verbose();
-const app = express();
+const nodemailer = require('nodemailer');
 const path = require('path');
+
+const app = express();
 const PORT = 3000;
 
 // Middleware
@@ -11,10 +13,19 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// SQLite3 setup
+// Create a transporter object using the default SMTP transport.
+const transporter = nodemailer.createTransport({
+    host: 'localhost',
+    port: 25,
+    secure: false,
+    tls: {
+        rejectUnauthorized: false
+    }
+});
+
+// SQLite3 setup, create database if they don't already exist.
 const db = new sqlite3.Database('./chessGames.db');
 
-// Create sqlite3 database tables if they don't exist.
 db.serialize(() => {
     db.run("CREATE TABLE IF NOT EXISTS games (gameId TEXT PRIMARY KEY NOT NULL, whitePlayerName TEXT NOT NULL, whitePlayerEmail TEXT NOT NULL, whitePlayerPassword TEXT, blackPlayerName TEXT NOT NULL, blackPlayerEmail TEXT NOT NULL, blackPlayerPassword TEXT);");
     db.run("CREATE TABLE IF NOT EXISTS moves (id INTEGER PRIMARY KEY NOT NULL, gameId TEXT NOT NULL, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, player TEXT NOT NULL, move TEXT NOT NULL, FOREIGN KEY (gameId) REFERENCES games(gameId));");
@@ -49,23 +60,52 @@ app.get('/game', (req, res) => {
 
     const gameId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     
-    //The black player's password is not known yet, so set it to a dummy value.
+    // The black player's password is not known yet, so set it to a dummy value.
     const blackPlayerPassword = 'Test';
 
-    const stmt = db.prepare("INSERT INTO games VALUES (?, ?, ?, ?, ?, ?, ?)");
-    stmt.run(gameId, req.query.whitePlayerName, req.query.whitePlayerEmail, req.query.whitePlayerPassword,
-        req.query.blackPlayerName, req.query.blackPlayerEmail, blackPlayerPassword, (err) => {
+    // Save the game to the database.
+    const saveGame = new Promise((resolve, reject) => {
+        const stmt = db.prepare("INSERT INTO games VALUES (?, ?, ?, ?, ?, ?, ?)");
+        stmt.run(gameId, req.query.whitePlayerName, req.query.whitePlayerEmail, req.query.whitePlayerPassword,
+            req.query.blackPlayerName, req.query.blackPlayerEmail, blackPlayerPassword, (err) => {
+                if (err) {
+                    console.log(err);
+                    reject("Error saving game.");
+                } else {
+                    console.log("Game saved successfully.");
+                    resolve();
+                }
+        });
+        stmt.finalize();
+    });
+
+    // Send an email after the game is saved to the database to the black player,
+    // providing them with an invitation to join the game.
+    saveGame.then(() => {
+        const mailOptions = {
+            from: 'noreply@chessvia.email',
+            to: req.query.blackPlayerEmail,
+            subject: `${req.query.whitePlayerName} has invited you to play a game of chess via email!`,
+            text: `Hello, ${req.query.whitePlayerName} has invited to join a chess game at https://www.chessvia.email/game/${gameId} \
+            where the white player has already made their first move. Your password is ${password} which you'll need to submit your moves.`
+        };
+    
+        transporter.sendMail(mailOptions, (err, info) => {
             if (err) {
                 console.log(err);
-                return res.send("Error saving game.");
+                reject("Error sending initial game welcome email.");
             } else {
-                console.log("Game saved successfully.");
+                console.log("Initial game welcome email sent successfully.");
+                resolve();
             }
+        });
+    }).then(() => {
+        // Redirect after the email is sent.
+        res.redirect(`/game/${gameId}`);
+    }).catch((err) => {
+        // Handle any errors that occurred during the process.
+        res.send(err);
     });
-    stmt.finalize();
-
-    // Redirect to the game board page
-    res.redirect(`/game/${gameId}`);
 });
 
 // Game board page, displays the game board and allows the user to
@@ -147,18 +187,64 @@ app.post('/game/:gameId', (req, res) => {
     const move = req.body.move;
     let player = move.color;
     let moveFromTo = `${move.from}-${move.to}`;
+    let opposingPlayerEmail;
 
-    try {
-        const stmt = db.prepare("INSERT INTO moves (gameId, player, move) VALUES (?, ?, ?)");
-        stmt.run(gameId, player, moveFromTo);
-        stmt.finalize();
-    } catch (err) {
-        console.log(err);
-        return res.send("Error saving move.");
+    // Get the opposing player's email address. They'll be notified that it's now their turn.
+    switch(player) {
+        case 'white':
+        case 'w':
+            opposingPlayerEmail = game[0].blackPlayerEmail;
+            break;
+        case 'black':
+        case 'b':
+            opposingPlayerEmail = game[0].whitePlayerEmail;
+            break;
+        default:
+            return res.send({ status: 'error' });           
     }
 
-    console.log("POST: " + JSON.stringify({ gameId, player, moveFromTo }));
-    res.send({ status: 'saved' });
+    // Save the move to the database. It is assumed before this point that the move is valid and the
+    // player has the correct password.
+    const saveMove = new Promise((resolve, reject) => {
+        const stmt = db.prepare("INSERT INTO moves (gameId, player, move) VALUES (?, ?, ?)");
+        stmt.run(gameId, player, moveFromTo, (err) => {
+            if (err) {
+                console.log(err);
+                reject("Error saving move.");
+            } else {
+                console.log("Move saved successfully.");
+                resolve();
+            }
+        });
+        stmt.finalize();
+    });
+
+    // Send an email to the opposing player with the game ID notifying them that it is their turn.
+    saveMove.then(() => {
+        const mailOptions = {
+            from: 'noreply@chessvia.email',
+            to: opposingPlayerEmail,
+            subject: 'Your opponent has moved from ${move.from} to ${move.to}. It\'s your turn!',
+            text: `Your opponent has moved from ${move.from} to ${move.to} so, it's now your turn.\
+                You can access the game at https://www.chessvia.email/game/${gameId}.`
+        };
+
+        transporter.sendMail(mailOptions, (err, info) => {
+            if (err) {
+                console.log(err);
+                return res.send("Error sending notification email to opposing player letting them know it's their turn.");
+            } else {
+                console.log("Notification email sent successfully to opposing player letting them know it's their turn");
+            }
+        });
+    }).then(() => {
+        console.log("POST: " + JSON.stringify({ gameId, player, moveFromTo }));
+        res.send({ status: 'saved' });
+    }).catch((err) => {
+        // Handle any errors that occurred during the process.
+        console.log(err);
+        res.send({ status: 'error' });
+    });
 });
 
 // Check the player's password against the database.
