@@ -2,6 +2,8 @@
 
 A web application that allows two players to play chess. Built with Node.js, Express, chessboard.js, and chess.js. Each move is saved to an SQLite database.
 
+A production installation of this software is available from [https://www.chessvia.email/](https://www.chessvia.email/).
+
 ## Features
 
 - Interactive chessboard using `chessboard.js`.
