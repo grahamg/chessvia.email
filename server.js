@@ -44,66 +44,60 @@ app.get('/new-game', (req, res) => {
 
 // Create a new game, save it to the database, and redirect user to the
 // game board page.
-app.get('/game', (req, res) => {
-    console.log("GET /game " + JSON.stringify(req.query));
-
+app.post('/game', (req, res) => {
     // Validate the request. If the request is invalid, return an error.
-    if (!req.query.whitePlayerEmail || !req.query.blackPlayerEmail) {
-        console.log("Error saving game.");
+    if (!req.body.whitePlayerEmail || !req.body.blackPlayerEmail) {
         return res.send("Error saving game.");
     }
 
-    if(req.query.whitePlayerPassword !== req.query.whitePlayerConfirmPassword) {
-        console.log("Passwords do not match for the white player.");
+    if(req.body.whitePlayerPassword !== req.body.whitePlayerConfirmPassword) {
         return res.send("Passwords do not match for the white player.");
     }
 
     const gameId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     
-    // The black player's password is not known yet, so set it to a dummy value.
+    // The black player's password isn't known yet, so set it to a dummy value.
     const blackPlayerPassword = 'Test';
 
-    // Save the game to the database.
     const saveGame = new Promise((resolve, reject) => {
         const stmt = db.prepare("INSERT INTO games VALUES (?, ?, ?, ?, ?, ?, ?)");
-        stmt.run(gameId, req.query.whitePlayerName, req.query.whitePlayerEmail, req.query.whitePlayerPassword,
-            req.query.blackPlayerName, req.query.blackPlayerEmail, blackPlayerPassword, (err) => {
+        stmt.run(gameId, req.body.whitePlayerName, req.body.whitePlayerEmail, req.body.whitePlayerPassword,
+            req.body.blackPlayerName, req.body.blackPlayerEmail, blackPlayerPassword, (err) => {
                 if (err) {
                     console.log(err);
                     reject("Error saving game.");
                 } else {
-                    console.log("Game saved successfully.");
+                    console.log(`Game created under id: ${gameId}`);
                     resolve();
                 }
         });
         stmt.finalize();
     });
-
-    // Send an email after the game is saved to the database to the black player,
-    // providing them with an invitation to join the game.
-    saveGame.then(() => {
-        const mailOptions = {
-            from: 'noreply@chessvia.email',
-            to: req.query.blackPlayerEmail,
-            subject: `${req.query.whitePlayerName} has invited you to play a game of chess via email!`,
-            text: `Hello, ${req.query.whitePlayerName} has invited to join a chess game at https://www.chessvia.email/game/${gameId} \
-            where the white player has already made their first move. Your password is ${password} which you'll need to submit your moves.`
-        };
     
-        transporter.sendMail(mailOptions, (err, info) => {
-            if (err) {
-                console.log(err);
-                reject("Error sending initial game welcome email.");
-            } else {
-                console.log("Initial game welcome email sent successfully.");
-                resolve();
-            }
+    saveGame.then(() => {
+        console.log("Attempting to send email...");
+        return new Promise((resolve, reject) => {
+            transporter.sendMail({
+                from: 'noreply@chessvia.email',
+                to: req.body.blackPlayerEmail,
+                subject: `${req.body.whitePlayerName} has invited you to play a game of chess via email!`,
+                text: `Hello, ${req.body.whitePlayerName} has invited to join a chess game.\n\nTo accept the invitation, visit \
+                https://www.chessvia.email/${gameId}/join. Before making your first move, you'll get a chance to set your own password which protect your moves.`
+            }, (err, info) => {
+                if (err) {
+                    console.log(err);
+                    reject("Error sending initial game welcome email.");
+                } else {
+                    console.log("Initial game welcome email sent successfully.");
+                    resolve();
+                }
+            });
         });
     }).then(() => {
-        // Redirect after the email is sent.
+        console.log(`Redirecting to /game/${gameId}`);
         res.redirect(`/game/${gameId}`);
     }).catch((err) => {
-        // Handle any errors that occurred during the process.
+        console.log("Error caught in promise chain:", err);
         res.send(err);
     });
 });

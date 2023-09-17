@@ -46,14 +46,37 @@
         button:hover, input[type="submit"]:hover {
             background-color: #45a049;
         }
+
+        #label-password-match {
+            display: none;
+            color: red;
+        }
     </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const modifyWhitePlayerForm = (event) => {
+                const whitePlayerPassword = document.getElementsByName('whitePlayerPassword')[0].value;
+                const whitePlayerConfirmPassword = document.getElementsByName('whitePlayerConfirmPassword')[0].value;
+                if (whitePlayerPassword !== whitePlayerConfirmPassword) {
+                    document.getElementById('label-password-match').style.display = 'block';
+                    document.getElementsByTagName('form')[0].childNodes[13].disabled = true;
+                } else {
+                    document.getElementById('label-password-match').style.display = 'none';
+                    document.getElementsByTagName('form')[0].childNodes[13].disabled = false;
+                }
+            }
+
+            const whitePlayerForm = document.getElementById("white-player-form");
+            whitePlayerForm.addEventListener('change', modifyWhitePlayerForm);
+        });
+    </script>
 </head>
 <body>
     <h2>New Game Wizard</h2>
 
-    <form action="/game" method="get">
+    <form action="/game" method="post">
         <!-- White Player Form -->
-        <div class="player-form">
+        <div id="white-player-form" class="player-form">
             <div class="player-icon">&#9814;</div> <!-- White Rook Unicode Character -->
             <div class="player-fields">
                 <input type="text" name="whitePlayerName" placeholder="Your Name" required>
@@ -64,7 +87,7 @@
         </div>
 
         <!-- Black Player Form -->
-        <div class="player-form">
+        <div id="black-player-form" class="player-form">
             <div class="player-icon">&#9820;</div> <!-- Black Rook Unicode Character -->
             <div class="player-fields">
                 <input type="text" name="blackPlayerName" placeholder="Opponent's Name" required>
@@ -72,10 +95,11 @@
             </div>
         </div>
 
+        <p id="label-password-match">The password and it's confirmation don't match.</p>
         <p>Your opponent will be emailed, notifying them that you'd like to start a new chess game.</p>
         <p>They'll be asked to set their own password to protect their moves.</p>
 
-        <input type="submit" value="White game piece moves first">
+        <input type="submit" value="Start New Game">
     </form>
 </body>
 </html>
