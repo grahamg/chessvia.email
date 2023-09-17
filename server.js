@@ -81,8 +81,14 @@ app.post('/game', (req, res) => {
                 from: 'noreply@chessvia.email',
                 to: req.body.blackPlayerEmail,
                 subject: `${req.body.whitePlayerName} has invited you to play a game of chess via email!`,
-                text: `Hello, ${req.body.whitePlayerName} has invited to join a chess game.\n\nTo accept the invitation, visit \
-                https://www.chessvia.email/${gameId}/join. Before making your first move, you'll get a chance to set your own password which protect your moves.`
+                text: `Hello ${req.body.blackPlayerName},\n/
+                ${req.body.whitePlayerName} has invited you to join a chess game.\n/
+                To accept the invitation, visit https://www.chessvia.email/${gameId}/join.\n/
+                Before making your first move, you'll get a chance to set your own password for the game.\n/
+                This prevents unauthorized clients from submitting moves on your behalf.\n/
+                Please visit https://www.chessvia.email/ to learn more about this service.\n/
+                Good Luck,\n\n/
+                ChessVia.email Notification Robot`
             }, (err, info) => {
                 if (err) {
                     console.log(err);
