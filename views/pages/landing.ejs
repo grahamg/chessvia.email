@@ -69,6 +69,32 @@
             }
         }
 
+        table {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 10px;
+            border: 0px solid black;
+        }
+
+        th {
+            background-color:rgb(174, 137, 104);
+            color: black;
+        }
+
+        tr:nth-child(odd) {
+            background-color: rgb(236, 217, 185);
+            color: black;
+        }
+
+        tr:nth-child(even) {
+            background-color:rgb(174, 137, 104);
+            color: black;
+        }
+
         footer {
             position: fixed;
             left: 0;
@@ -83,9 +109,9 @@
 <body>
     <div class="container">
         <h1>♙ Welcome to chessvia.email! ♟︎</h1>
-        <p>Ever wanted to play chess with a friend, but at your own pace? Here, you can play a relaxed game of chess with someone, even if you're miles apart. Each move is sent through a friendly email link.</p>
-        <p>Don't worry about keeping track of the game. We'll remember all the moves for you and even let you look back at them. So, you can just enjoy the game and plan your next winning move.</p>
-        <p>Here's how it works:</p>
+        <p>Ever wanted to play chess with a friend, but at your own pace? Here, you can play a relaxed game of chess with someone, even if you're miles apart. Each move is sent through a friendly email link. This is a free service with no advertisments.</p>
+        <p>Don't worry about keeping track of the game. We'll remember all the moves for you and even let you look back at them. So, you can just enjoy the game and plan your next winning move. 🎉</p>
+        <h2>Here's how it works</h2>
         <ol>
             <li>You'll start a new game by clicking the button below.</li>
             <li>Enter your email address and your opponent's email address.</li>
@@ -94,9 +120,44 @@
             <li>They'll make a move and you'll be notified via email of their recent activity.</li>
             <li>And so on...</li>
         </ol>
-        <p>It's that simple! 🎉</p>
-        <p>Ready to play? </p>
-        <button onclick="location.href='/new-game'">Start New Game</button>
+        <button onclick="location.href='/new-game'">New Game</button>
+        
+        <% if (games.length > 0) { %>
+            <hr>
+            <h2>Recent Games</h2>
+            <table id="active-games">
+                <thead>
+                    <tr>
+                        <th>Black</th>
+                        <th>White</th>
+                        <th>Last Move</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% games.forEach((game) => { %>
+                        <tr>
+                            <td>
+                                <%= game.blackPlayerName %>
+                            </td>
+                            <td>
+                                <%= game.whitePlayerName %>
+                            </td>
+                            <td>
+                                <% if (!game.move) { %>
+                                    No moves yet.
+                                <% } else { %>
+                                    <%= (game.player === 'w') ? 'White' : 'Black' %> moved to <%= game.move %> <%= game.timeAgo %>.
+                                <% } %>
+                            </td>
+                            <td>
+                                <a href="/game/<%= game.gameId %>" target="blank">/game/<%= game.gameId %></a>
+                            </td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        <% } %>
 
         <footer>&copy; <script>document.write(new Date().getFullYear());</script>, https://www.chessvia.email.</footer>
     </div>

@@ -31,9 +31,42 @@ db.serialize(() => {
     db.run("CREATE TABLE IF NOT EXISTS moves (id INTEGER PRIMARY KEY NOT NULL, gameId TEXT NOT NULL, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, player TEXT NOT NULL, move TEXT NOT NULL, FOREIGN KEY (gameId) REFERENCES games(gameId));");
 });
 
+const timeAgo = (sqliteDatetime) => {
+    const now = new Date();
+    const dateFromSQLite = new Date(sqliteDatetime);
+
+    const secondsDiff = Math.floor((now - dateFromSQLite) / 1000);
+    const minutesDiff = Math.floor(secondsDiff / 60);
+    const hoursDiff = Math.floor(minutesDiff / 60);
+    const daysDiff = Math.floor(hoursDiff / 24);
+
+    if (daysDiff > 0) {
+        return `${daysDiff} day${daysDiff > 1 ? 's' : ''} ago`;
+    } else if (hoursDiff > 0) {
+        return `${hoursDiff} hour${hoursDiff > 1 ? 's' : ''} ago`;
+    } else if (minutesDiff > 0) {
+        return `${minutesDiff} minute${minutesDiff > 1 ? 's' : ''} ago`;
+    } else {
+        return "just now";
+    }
+}
+
 // Root landing page, explains the application concept.
 app.get('/', (req, res) => {
-    res.render('pages/landing');
+    
+    db.all("WITH LatestMoves AS (SELECT gameId, MAX(id) AS maxId FROM moves GROUP BY gameId) \
+    SELECT g.*, m.id AS moveId, m.timestamp, m.player, m.move FROM games g LEFT JOIN LatestMoves \
+    lm ON g.gameId = lm.gameId LEFT JOIN moves m ON lm.gameId = m.gameId AND lm.maxId = m.id \
+    ORDER BY m.timestamp DESC, g.gameId DESC \
+    LIMIT 10;", (err, games) => {
+        for (i in games) {
+            games[i]['timeAgo'] = timeAgo(i.timestamp);
+        }
+
+        res.render('pages/landing', {
+            games: games
+        });
+    });
 });
 
 // New game page, allows the user to create a new game, specifying
