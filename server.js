@@ -54,15 +54,13 @@ app.post('/game', (req, res) => {
         return res.send("Passwords do not match for the white player.");
     }
 
-    const gameId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    
-    // The black player's password isn't known yet, so set it to a dummy value.
-    const blackPlayerPassword = 'Test';
+    // Generate a random game ID up to 6 characters long.
+    const gameId = Math.random().toString(36).substring(2, 8);
 
     const saveGame = new Promise((resolve, reject) => {
         const stmt = db.prepare("INSERT INTO games VALUES (?, ?, ?, ?, ?, ?, ?)");
         stmt.run(gameId, req.body.whitePlayerName, req.body.whitePlayerEmail, req.body.whitePlayerPassword,
-            req.body.blackPlayerName, req.body.blackPlayerEmail, blackPlayerPassword, (err) => {
+            req.body.blackPlayerName, req.body.blackPlayerEmail, 'NULL', (err) => {
                 if (err) {
                     console.log(err);
                     reject("Error saving game.");
@@ -113,18 +111,22 @@ app.post('/game', (req, res) => {
 app.get('/game/:gameId', (req, res) => {
     const gameId = req.params.gameId;
 
-    // Fetch game details
+    // Fetch game details for rendering the game board template.
     db.all("SELECT * FROM games WHERE gameId = ?", [gameId], (err, game) => {
         if (err) {
             console.log(err);
-            return res.send("Error loading game.");
+            return res.status(500).send("Error loading game.");
         }
 
-        // Fetch moves for the game
+        if (game.length === 0) {
+            return res.status(404).send("Not found.");
+        }
+
+        // Fetch move history, per player, for the game.
         db.all("SELECT * FROM moves WHERE gameId = ?", [gameId], (err, movesList) => {
             if (err) {
                 console.log(err);
-                return res.send("Error loading moves.");
+                return res.status(500).send("Error loading moves.");
             }
 
             // Render the template with the fetched data
@@ -146,7 +148,11 @@ app.get('/game/:gameId/join', (req, res) => {
     db.all("SELECT * FROM games WHERE gameId = ?", [gameId], (err, game) => {
         if (err) {
             console.log(err);
-            return res.send("Error loading moves.");
+            return res.status(500).send("Error loading moves.");
+        }
+
+        if (game.length === 0) {
+            return res.status(404).send("Not found.");
         }
 
         res.render('pages/join-game', {
@@ -179,6 +185,22 @@ app.post('/game/:gameId/join', (req, res) => {
 
     console.log("POST: " + JSON.stringify(req.body));
     res.send({ status: 'success' });
+});
+
+// Check if the black player has set their password yet.
+// {'status: 'false'} means they have not set their password yet.
+// {'status': 'true'} means they have set their password.
+app.get('/game/:gameId/black-player-status', (req, res) => {
+    const gameId = req.params.gameId;
+
+    db.all("SELECT g.blackPlayerPassword FROM games g WHERE g.gameId = ? AND g.blackPlayerPassword = 'NULL';", [gameId], (err, passwordStatus) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).send({ status: 'error'});
+        }
+
+       return res.send({ status: passwordStatus.length === 1 ? 'false' : 'true' });
+    });
 });
 
 // Save a board move to the database.
@@ -243,7 +265,7 @@ app.post('/game/:gameId', (req, res) => {
     }).catch((err) => {
         // Handle any errors that occurred during the process.
         console.log(err);
-        res.send({ status: 'error' });
+        return res.status(500).send({ status: 'error'});
     });
 });
 
@@ -258,7 +280,11 @@ app.post('/game/:gameId/check-password', (req, res) => {
     db.all("SELECT * FROM games WHERE gameId = ?", [gameId], (err, game) => {
         if (err) {
             console.log(err);
-            return res.send("Error loading game.");
+            return res.status(500).send("Error loading game.");
+        }
+
+        if (game.length === 0) {
+            res.status(404).send("Not found.");
         }
 
         switch(player) {

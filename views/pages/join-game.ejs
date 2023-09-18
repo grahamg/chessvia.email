@@ -47,7 +47,30 @@
         button:hover, input[type="submit"]:hover {
             background-color: #45a049;
         }
+
+        #label-password-match {
+            display: none;
+            color: red;
+        }
     </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const modifyPlayerForm = (event) => {
+                const password = document.getElementsByName('blackPlayerPassword')[0].value;
+                const confirmPassword = document.getElementsByName('blackPlayerConfirmPassword')[0].value;
+                if (password !== confirmPassword) {
+                    document.getElementById('label-password-match').style.display = 'block';
+                    document.getElementsByTagName('form')[0].childNodes[9].disabled = true;
+                } else {
+                    document.getElementById('label-password-match').style.display = 'none';
+                    document.getElementsByTagName('form')[0].childNodes[9].disabled = false;
+                }
+            }
+
+            const joinGameForm = document.getElementById("joinGameForm");
+            joinGameForm.addEventListener('change', modifyPlayerForm);
+        });
+    </script>
 </head>
 <body>
     <h2>Join Game</h2>
@@ -76,12 +99,12 @@
             </div>
         </div>
 
+        <p id="label-password-match">Your password and it's confirmation don't match.</p>
         <p>You'll be playing as black.</p>
         <p>Your opponent, <%= game.whitePlayerName %>, is playing as white and has already taken the intial move of the game.</p>
 
         <input type="submit" value="Join Game">
     </form>
-    <script>const blackPlayerHasUnsetPassword = <%= game.blackPlayerPassword === 'True' %>;</script>
     <script src="/join-game.js"></script>
 </body>
 </html>

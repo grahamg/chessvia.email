@@ -1,14 +1,27 @@
 // Initialize the join game form
-(function(document, blackPlayerHasUnsetPassword) {
+(function(document) {
     const gameId = document.location.href.split('/').at(4);
 
-    if (!blackPlayerHasUnsetPassword) {
-        alert('The black player has already set their password. You can no longer join this game.');
-        window.location = `/game/${gameId}`;
-    }
+    fetch(`/game/${gameId}/black-player-status`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(`black-password-status response: ${data.status}`);
+        if (data.status === 'true') {
+            alert('The black player has already accepted the invitation to this game.');
+            window.location = `/`;
+        } else if (data.status === 'error') {
+            alert('The game you are trying to join does not exist.');
+            window.location = '/';
+        }
+    });
 
     document.getElementById('joinGameForm').addEventListener('submit', function(event) {
-        event.preventDefault(); // Prevent the default form submission
+        event.preventDefault();
 
         let password = document.getElementById('pass').value;
         let confirmPassword = document.getElementById('confirmPass').value;
@@ -21,9 +34,9 @@
             },
             body: JSON.stringify({ gameId, password, confirmPassword }),
         })
-        .then(response => response.json()) // Assuming server responds with json
+        .then(response => response.json())
         .then(data => {
-            console.log(`check-password response: ${data.status}`); // Should be `success`
+            console.log(`check-password response: ${data.status}`);
             if (data.status === 'success') {
                 window.location = `/game/${gameId}`;
             } else if (data.status === 'error') {
@@ -34,4 +47,4 @@
             console.log(`Error submitting password: ${error}`);
         });
     });
-})(document, blackPlayerHasUnsetPassword);
+})(document);
