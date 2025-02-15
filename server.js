@@ -91,18 +91,32 @@ app.post('/game', (req, res) => {
     const gameId = Math.random().toString(36).substring(2, 8);
 
     const saveGame = new Promise((resolve, reject) => {
-        const stmt = db.prepare("INSERT INTO games VALUES (?, ?, ?, ?, ?, ?, ?)");
-        stmt.run(gameId, req.body.whitePlayerName, req.body.whitePlayerEmail, req.body.whitePlayerPassword,
-            req.body.blackPlayerName, req.body.blackPlayerEmail, 'NULL', (err) => {
-                if (err) {
-                    console.log(err);
-                    reject("Error saving game.");
-                } else {
-                    console.log(`Game created under id: ${gameId}`);
-                    resolve();
-                }
+        db.serialize(() => {
+            db.run("BEGIN TRANSACTION");
+            const stmt = db.prepare("INSERT INTO games VALUES (?, ?, ?, ?, ?, ?, ?)");
+            stmt.run(gameId, req.body.whitePlayerName, req.body.whitePlayerEmail, req.body.whitePlayerPassword,
+                req.body.blackPlayerName, req.body.blackPlayerEmail, 'NULL', (err) => {
+                    if (err) {
+                        console.log(err);
+                        db.run("ROLLBACK", () => {
+                            reject("Error saving game.");
+                        });
+                    } else {
+                        db.run("COMMIT", (err) => {
+                            if (err) {
+                                console.log(err);
+                                db.run("ROLLBACK", () => {
+                                    reject("Error committing transaction.");
+                                });
+                            } else {
+                                console.log(`Game created under id: ${gameId}`);
+                                resolve();
+                            }
+                        });
+                    }
+            });
+            stmt.finalize();
         });
-        stmt.finalize();
     });
     
     saveGame.then(() => {
@@ -261,17 +275,31 @@ app.post('/game/:gameId', (req, res) => {
     // Save the move to the database. It is assumed before this point that the move is valid and the
     // player has the correct password.
     const saveMove = new Promise((resolve, reject) => {
-        const stmt = db.prepare("INSERT INTO moves (gameId, player, move) VALUES (?, ?, ?)");
-        stmt.run(gameId, player, moveFromTo, (err) => {
-            if (err) {
-                console.log(err);
-                reject("Error saving move.");
-            } else {
-                console.log("Move saved successfully.");
-                resolve();
-            }
+        db.serialize(() => {
+            db.run("BEGIN TRANSACTION");
+            const stmt = db.prepare("INSERT INTO moves (gameId, player, move) VALUES (?, ?, ?)");
+            stmt.run(gameId, player, moveFromTo, (err) => {
+                if (err) {
+                    console.log(err);
+                    db.run("ROLLBACK", () => {
+                        reject("Error saving move.");
+                    });
+                } else {
+                    db.run("COMMIT", (err) => {
+                        if (err) {
+                            console.log(err);
+                            db.run("ROLLBACK", () => {
+                                reject("Error committing transaction.");
+                            });
+                        } else {
+                            console.log("Move saved successfully.");
+                            resolve();
+                        }
+                    });
+                }
+            });
+            stmt.finalize();
         });
-        stmt.finalize();
     });
 
     // Send an email to the opposing player with the game ID notifying them that it is their turn.
