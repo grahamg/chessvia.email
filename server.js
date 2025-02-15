@@ -1,5 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const bcrypt = require('bcrypt');
+const SALT_ROUNDS = 10;
 const sqlite3 = require('sqlite3').verbose();
 const nodemailer = require('nodemailer');
 const path = require('path');
@@ -77,24 +79,26 @@ app.get('/new-game', (req, res) => {
 
 // Create a new game, save it to the database, and redirect user to the
 // game board page.
-app.post('/game', (req, res) => {
+app.post('/game', async (req, res) => {
     // Validate the request. If the request is invalid, return an error.
     if (!req.body.whitePlayerEmail || !req.body.blackPlayerEmail) {
-        return res.send("Error saving game.");
+        return res.status(400).json({ status: 'error', message: "Missing required player email addresses" });
     }
 
     if(req.body.whitePlayerPassword !== req.body.whitePlayerConfirmPassword) {
-        return res.send("Passwords do not match for the white player.");
+        return res.status(400).json({ status: 'error', message: "Passwords do not match for the white player" });
     }
 
     // Generate a random game ID up to 6 characters long.
     const gameId = Math.random().toString(36).substring(2, 8);
 
-    const saveGame = new Promise((resolve, reject) => {
-        db.serialize(() => {
-            db.run("BEGIN TRANSACTION");
-            const stmt = db.prepare("INSERT INTO games VALUES (?, ?, ?, ?, ?, ?, ?)");
-            stmt.run(gameId, req.body.whitePlayerName, req.body.whitePlayerEmail, req.body.whitePlayerPassword,
+    const saveGame = new Promise(async (resolve, reject) => {
+        try {
+            const hashedPassword = await bcrypt.hash(req.body.whitePlayerPassword, SALT_ROUNDS);
+            db.serialize(() => {
+                db.run("BEGIN TRANSACTION");
+                const stmt = db.prepare("INSERT INTO games VALUES (?, ?, ?, ?, ?, ?, ?)");
+                stmt.run(gameId, req.body.whitePlayerName, req.body.whitePlayerEmail, hashedPassword,
                 req.body.blackPlayerName, req.body.blackPlayerEmail, 'NULL', (err) => {
                     if (err) {
                         console.log(err);
@@ -211,27 +215,38 @@ app.get('/game/:gameId/join', (req, res) => {
 
 // Join game page, allows black player to join a game by entering the
 // game ID within the URI and their player password. Handles join form submission.
-app.post('/game/:gameId/join', (req, res) => {
+app.post('/game/:gameId/join', async (req, res) => {
     const gameId = req.body.gameId;
     const password = req.body.password;
     const confirmPassword = req.body.confirmPassword;
 
     if (password !== confirmPassword) {
-        console.log("Passwords do not match for the black player.");
-        return res.send("Passwords do not match for the black player.");
+        return res.status(400).json({ 
+            status: 'error', 
+            message: "Passwords do not match for the black player" 
+        });
     }
 
     try {
-        const stmt = db.prepare("UPDATE games SET blackPlayerPassword = ? WHERE gameId = ?");
-        stmt.run(password, gameId);
-        stmt.finalize();
+        const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+        await new Promise((resolve, reject) => {
+            const stmt = db.prepare("UPDATE games SET blackPlayerPassword = ? WHERE gameId = ?");
+            stmt.run(hashedPassword, gameId, function(err) {
+                stmt.finalize();
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+        
+        console.log("POST: " + JSON.stringify(req.body));
+        res.json({ status: 'success' });
     } catch (err) {
-        console.log(err);
-        return res.send({ status: 'error'});
+        console.error(err);
+        res.status(500).json({ 
+            status: 'error',
+            message: "Failed to update password" 
+        });
     }
-
-    console.log("POST: " + JSON.stringify(req.body));
-    res.send({ status: 'success' });
 });
 
 // Check if the black player has set their password yet.
@@ -331,40 +346,61 @@ app.post('/game/:gameId', (req, res) => {
 });
 
 // Check the player's password against the database.
-app.post('/game/:gameId/check-password', (req, res) => {
+app.post('/game/:gameId/check-password', async (req, res) => {
     const gameId = req.body.gameId;
     const player = req.body.gameTurn;
     const password = req.body.enteredPassword;
 
-    console.log(`POST: /game/${gameId}/check-password ${JSON.stringify({ gameId, player, password })}`);
+    console.log(`POST: /game/${gameId}/check-password ${JSON.stringify({ gameId, player })}`);
 
-    db.all("SELECT * FROM games WHERE gameId = ?", [gameId], (err, game) => {
-        if (err) {
-            console.log(err);
-            return res.status(500).send("Error loading game.");
-        }
+    try {
+        const game = await new Promise((resolve, reject) => {
+            db.all("SELECT * FROM games WHERE gameId = ?", [gameId], (err, games) => {
+                if (err) reject(err);
+                else resolve(games);
+            });
+        });
 
         if (game.length === 0) {
-            res.status(404).send("Not found.");
+            return res.status(404).json({ 
+                status: 'error',
+                message: "Game not found" 
+            });
         }
 
+        let storedPassword;
         switch(player) {
             case 'white':
             case 'w':
-                if (password === game[0].whitePlayerPassword) {
-                    return res.send({ status: 'success' });
-                } 
+                storedPassword = game[0].whitePlayerPassword;
                 break;
             case 'black':
             case 'b':
-                if (password === game[0].blackPlayerPassword) {
-                    return res.send({ status: 'success' });
-                }
+                storedPassword = game[0].blackPlayerPassword;
                 break;
             default:
-                return res.send({ status: 'error' });           
+                return res.status(400).json({ 
+                    status: 'error',
+                    message: "Invalid player type" 
+                });
         }
-    });
+
+        const match = await bcrypt.compare(password, storedPassword);
+        if (match) {
+            return res.json({ status: 'success' });
+        } else {
+            return res.status(401).json({ 
+                status: 'error',
+                message: "Invalid password" 
+            });
+        }
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ 
+            status: 'error',
+            message: "Server error while verifying password" 
+        });
+    }
 });
 
 app.listen(PORT, () => {
