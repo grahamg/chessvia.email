@@ -279,7 +279,7 @@ app.post('/game/:gameId', (req, res) => {
         const mailOptions = {
             from: 'noreply@chessvia.email',
             to: opposingPlayerEmail,
-            subject: 'Your opponent has moved from ${move.from} to ${move.to}. It\'s your turn!',
+            subject: `Your opponent has moved from ${move.from} to ${move.to}. It's your turn!`,
             text: `Your opponent has moved from ${move.from} to ${move.to} so, it's now your turn.\
                 You can access the game at https://www.chessvia.email/game/${gameId}.`
         };
