@@ -1,4 +1,5 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const SALT_ROUNDS = 10;
@@ -14,6 +15,28 @@ app.use(bodyParser.json());
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Rate limiters
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+    message: 'Too many requests from this IP, please try again later.'
+});
+
+const strictAuthLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // limit each IP to 5 password attempts per windowMs
+    message: 'Too many password attempts from this IP, please try again later.'
+});
+
+const gameMovesLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 30, // limit each IP to 30 moves per windowMs
+    message: 'Too many move attempts from this IP, please try again later.'
+});
+
+// Apply general rate limiting to all requests
+app.use(generalLimiter);
 
 // Create a transporter object using the default SMTP transport.
 const transporter = nodemailer.createTransport({
@@ -266,7 +289,7 @@ app.get('/game/:gameId/black-player-status', (req, res) => {
 });
 
 // Save a board move to the database.
-app.post('/game/:gameId', (req, res) => {
+app.post('/game/:gameId', gameMovesLimiter, (req, res) => {
     const gameId = req.body.gameId;
     const move = req.body.move;
     let player = move.color;
@@ -346,7 +369,7 @@ app.post('/game/:gameId', (req, res) => {
 });
 
 // Check the player's password against the database.
-app.post('/game/:gameId/check-password', async (req, res) => {
+app.post('/game/:gameId/check-password', strictAuthLimiter, async (req, res) => {
     const gameId = req.body.gameId;
     const player = req.body.gameTurn;
     const password = req.body.enteredPassword;
